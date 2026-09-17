@@ -1,8 +1,10 @@
-#include "states/LevelSelectState.hpp"
-
 #include "core/StateManager.hpp"
+
+#include "states/LevelSelectState.hpp"
 #include "states/MainMenuState.hpp"
 #include "states/GameplayState.hpp"
+
+#include "persistence/SaveManager.hpp"
 
 #include <memory>
 
@@ -21,21 +23,18 @@ LevelSelectState::LevelSelectState(
       level5Button_(font_, "LEVEL 5", {260.f, 60.f}),
       backButton_(font_, "BACK", {260.f, 60.f})
 {
-    const auto titleBounds = title_.getLocalBounds();
+    title_.setFillColor(sf::Color::White);
 
-    title_.setOrigin({titleBounds.position.x + titleBounds.size.x / 2.f,
-                      titleBounds.position.y + titleBounds.size.y / 2.f});
-
-    title_.setPosition({640.f, 85.f});
-
-    const float buttonX = 510.f;
-
-    level1Button_.setPosition({buttonX, 170.f});
-    level2Button_.setPosition({buttonX, 245.f});
-    level3Button_.setPosition({buttonX, 320.f});
-    level4Button_.setPosition({buttonX, 395.f});
-    level5Button_.setPosition({buttonX, 470.f});
-    backButton_.setPosition({buttonX, 570.f});
+    level1Button_.setOnClick([this]()
+                             { startLevel(1); });
+    level2Button_.setOnClick([this]()
+                             { startLevel(2); });
+    level3Button_.setOnClick([this]()
+                             { startLevel(3); });
+    level4Button_.setOnClick([this]()
+                             { startLevel(4); });
+    level5Button_.setOnClick([this]()
+                             { startLevel(5); });
 
     backButton_.setOnClick([this]()
                            { stateManager_.changeState(
@@ -43,34 +42,72 @@ LevelSelectState::LevelSelectState(
                                      window_,
                                      stateManager_)); });
 
-    level1Button_.setOnClick([this]()
-                             { startLevel(1); });
+    savedGameDialog_.setOnContinue([this]()
+                                   {
+    const SaveData saveData =
+        SaveManager::load();
 
-    level2Button_.setOnClick([this]()
-                             { startLevel(2); });
+    stateManager_.changeState(
+        std::make_unique<GameplayState>(
+            window_,
+            stateManager_,
+            saveData
+        )
+    ); });
 
-    level3Button_.setOnClick([this]()
-                             { startLevel(3); });
+    savedGameDialog_.setOnStartOver([this]()
+                                    {
+    SaveManager::removeSave();
 
-    level4Button_.setOnClick([this]()
-                             { startLevel(4); });
+    startNewLevel(selectedLevel_); });
 
-    level5Button_.setOnClick([this]()
-                             { startLevel(5); });
+    savedGameDialog_.setOnCancel([this]()
+                                 { savedGameDialogOpen_ = false; });
+
+    savedGameDialog_.updateLayout(
+        window_.getSize());
+
+    updateLayout();
 }
 
 void LevelSelectState::startLevel(
     int levelNumber)
 {
-    stateManager_.changeState(
-        std::make_unique<GameplayState>(
-            window_,
-            stateManager_,
-            levelNumber));
+    if (SaveManager::hasSave())
+    {
+        const SaveData saveData =
+            SaveManager::load();
+
+        if (saveData.levelNumber == levelNumber)
+        {
+            selectedLevel_ = levelNumber;
+            savedGameDialogOpen_ = true;
+            return;
+        }
+    }
+
+    startNewLevel(levelNumber);
 }
 
 void LevelSelectState::handleEvent(const sf::Event &event)
 {
+    if (savedGameDialogOpen_)
+    {
+        savedGameDialog_.handleEvent(event);
+
+        if (const auto *keyPressed =
+                event.getIf<sf::Event::KeyPressed>())
+        {
+            if (keyPressed->code ==
+                sf::Keyboard::Key::Escape)
+            {
+                savedGameDialogOpen_ = false;
+            }
+        }
+
+        return;
+    }
+
     level1Button_.handleEvent(event);
     level2Button_.handleEvent(event);
     level3Button_.handleEvent(event);
@@ -81,6 +118,10 @@ void LevelSelectState::handleEvent(const sf::Event &event)
 
 void LevelSelectState::update(sf::Time)
 {
+    savedGameDialog_.updateLayout(
+        window_.getSize());
+
+    updateLayout();
 }
 
 void LevelSelectState::render(sf::RenderWindow &window)
@@ -93,4 +134,56 @@ void LevelSelectState::render(sf::RenderWindow &window)
     level4Button_.render(window);
     level5Button_.render(window);
     backButton_.render(window);
+
+    if (savedGameDialogOpen_)
+    {
+        savedGameDialog_.render(window);
+    }
+}
+
+void LevelSelectState::updateLayout()
+{
+    const sf::Vector2u windowSize =
+        window_.getSize();
+
+    const float width =
+        static_cast<float>(windowSize.x);
+
+    const float buttonWidth = 260.f;
+    const float buttonHeight = 60.f;
+    const float gap = 14.f;
+
+    const float titleY = 95.f;
+    const float buttonsStartY = 180.f;
+
+    const float buttonX =
+        (width - buttonWidth) / 2.f;
+
+    const sf::FloatRect titleBounds =
+        title_.getLocalBounds();
+
+    title_.setOrigin({titleBounds.position.x + titleBounds.size.x / 2.f,
+                      titleBounds.position.y + titleBounds.size.y / 2.f});
+
+    title_.setPosition({width / 2.f,
+                        titleY});
+
+    level1Button_.setPosition({buttonX, buttonsStartY});
+    level2Button_.setPosition({buttonX, buttonsStartY + (buttonHeight + gap) * 1.f});
+    level3Button_.setPosition({buttonX, buttonsStartY + (buttonHeight + gap) * 2.f});
+    level4Button_.setPosition({buttonX, buttonsStartY + (buttonHeight + gap) * 3.f});
+    level5Button_.setPosition({buttonX, buttonsStartY + (buttonHeight + gap) * 4.f});
+
+    backButton_.setPosition({buttonX,
+                             buttonsStartY + (buttonHeight + gap) * 5.f + 35.f});
+}
+
+void LevelSelectState::startNewLevel(
+    int levelNumber)
+{
+    stateManager_.changeState(
+        std::make_unique<GameplayState>(
+            window_,
+            stateManager_,
+            levelNumber));
 }

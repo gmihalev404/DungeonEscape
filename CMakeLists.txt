@@ -39,6 +39,10 @@ add_executable(
     src/ui/Button.cpp
     src/ui/HUD.cpp
     src/ui/PauseMenu.cpp
+    src/ui/ExitConfirmation.cpp
+    src/ui/SavedGameDialog.cpp
+
+    src/persistence/SaveManager.cpp
 )
 
 target_include_directories(

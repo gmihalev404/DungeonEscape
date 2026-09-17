@@ -31,4 +31,6 @@ private:
     Button leaderboardButton_;
     Button settingsButton_;
     Button exitButton_;
+
+        void updateLayout();
 };

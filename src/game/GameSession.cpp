@@ -5,6 +5,18 @@ GameSession::GameSession(int levelNumber)
 {
 }
 
+GameSession::GameSession(
+    int levelNumber,
+    int coins,
+    bool hasKey,
+    sf::Time elapsedTime)
+    : levelNumber_(levelNumber),
+      coins_(coins),
+      hasKey_(hasKey),
+      elapsedTime_(elapsedTime)
+{
+}
+
 void GameSession::update(sf::Time deltaTime)
 {
     elapsedTime_ += deltaTime;

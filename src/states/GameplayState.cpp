@@ -1,7 +1,11 @@
 #include "states/GameplayState.hpp"
+#include "states/LevelSelectState.hpp"
 
 #include "core/StateManager.hpp"
+
 #include "game/LevelLoader.hpp"
+
+#include "persistence/SaveManager.hpp"
 
 #include <string>
 #include <memory>
@@ -36,14 +40,81 @@ GameplayState::GameplayState(
                                       window_,
                                       stateManager_,
                                       session_.getLevelNumber())); });
+    hud_.setOnBack([this]()
+                   { exitConfirmationOpen_ = true; });
+
+    exitConfirmation_.setOnSaveAndExit([this]()
+                                       {
+    SaveManager::save(
+        session_,
+        level_,
+        player_
+    );
+
+    stateManager_.changeState(
+        std::make_unique<LevelSelectState>(
+            window_,
+            stateManager_
+        )
+    ); });
+
+    exitConfirmation_.setOnExitWithoutSaving([this]()
+                                             { stateManager_.changeState(
+                                                   std::make_unique<LevelSelectState>(
+                                                       window_,
+                                                       stateManager_)); });
+
+    exitConfirmation_.setOnCancel([this]()
+                                  { exitConfirmationOpen_ = false; });
 
     hud_.updateLayout(window_.getSize());
     pauseMenu_.updateLayout(window_.getSize());
+    exitConfirmation_.updateLayout(
+        window_.getSize());
+}
+
+GameplayState::GameplayState(
+    sf::RenderWindow &window,
+    StateManager &stateManager,
+    const SaveData &saveData)
+    : window_(window),
+      stateManager_(stateManager),
+      session_(
+          saveData.levelNumber,
+          saveData.coins,
+          saveData.hasKey,
+          saveData.elapsedTime),
+      level_(
+          saveData.tiles,
+          saveData.playerPosition),
+      player_(
+          saveData.playerPosition),
+      levelRenderer_(32.f)
+{
+    initializeUi();
 }
 
 void GameplayState::handleEvent(
     const sf::Event &event)
 {
+
+    if (exitConfirmationOpen_)
+    {
+        exitConfirmation_.handleEvent(event);
+
+        if (const auto *keyPressed =
+                event.getIf<sf::Event::KeyPressed>())
+        {
+            if (keyPressed->code ==
+                sf::Keyboard::Key::Escape)
+            {
+                exitConfirmationOpen_ = false;
+            }
+        }
+
+        return;
+    }
+
     if (paused_)
     {
         pauseMenu_.handleEvent(event);
@@ -146,7 +217,8 @@ void GameplayState::tryMove(
 void GameplayState::update(
     sf::Time deltaTime)
 {
-    if (!paused_)
+    if (!paused_ &&
+        !exitConfirmationOpen_)
     {
         session_.update(deltaTime);
         hud_.update(session_);
@@ -156,6 +228,8 @@ void GameplayState::update(
 
     hud_.updateLayout(window_.getSize());
     pauseMenu_.updateLayout(window_.getSize());
+    exitConfirmation_.updateLayout(
+        window_.getSize());
 }
 
 void GameplayState::render(
@@ -176,9 +250,15 @@ void GameplayState::render(
     {
         pauseMenu_.render(window);
     }
+
+    if (exitConfirmationOpen_)
+    {
+        exitConfirmation_.render(window);
+    }
 }
 
 void GameplayState::updateViews()
+
 {
     const sf::Vector2u windowSize =
         window_.getSize();
@@ -263,4 +343,55 @@ void GameplayState::updateViews()
 
     uiView_.setCenter({windowWidth / 2.f,
                        windowHeight / 2.f});
+}
+
+void GameplayState::initializeUi()
+{
+    hud_.update(session_);
+    updateViews();
+
+    hud_.setOnPause([this]()
+                    { paused_ = true; });
+
+    pauseMenu_.setOnResume([this]()
+                           { paused_ = false; });
+
+    pauseMenu_.setOnRestart([this]()
+                            { stateManager_.changeState(
+                                  std::make_unique<GameplayState>(
+                                      window_,
+                                      stateManager_,
+                                      session_.getLevelNumber())); });
+
+    hud_.setOnBack([this]()
+                   { exitConfirmationOpen_ = true; });
+
+    exitConfirmation_.setOnSaveAndExit([this]()
+                                       {
+        SaveManager::save(
+            session_,
+            level_,
+            player_
+        );
+
+        stateManager_.changeState(
+            std::make_unique<LevelSelectState>(
+                window_,
+                stateManager_
+            )
+        ); });
+
+    exitConfirmation_.setOnExitWithoutSaving([this]()
+                                             { stateManager_.changeState(
+                                                   std::make_unique<LevelSelectState>(
+                                                       window_,
+                                                       stateManager_)); });
+
+    exitConfirmation_.setOnCancel([this]()
+                                  { exitConfirmationOpen_ = false; });
+
+    hud_.updateLayout(window_.getSize());
+    pauseMenu_.updateLayout(window_.getSize());
+    exitConfirmation_.updateLayout(
+        window_.getSize());
 }

@@ -23,6 +23,8 @@ public:
 
     void render(sf::RenderWindow &window) const;
 
+    void setOnBack(Callback callback);
+
 private:
     std::string formatTime(sf::Time time) const;
 
@@ -34,5 +36,6 @@ private:
     sf::Text keyText_;
     sf::Text timeText_;
 
+    Button backButton_;
     Button pauseButton_;
 };

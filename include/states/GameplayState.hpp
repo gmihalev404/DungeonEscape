@@ -1,12 +1,18 @@
 #pragma once
 
 #include "core/GameState.hpp"
+
 #include "game/Level.hpp"
 #include "game/Player.hpp"
 #include "game/GameSession.hpp"
+
 #include "rendering/LevelRenderer.hpp"
+
 #include "ui/HUD.hpp"
 #include "ui/PauseMenu.hpp"
+#include "ui/ExitConfirmation.hpp"
+
+#include "persistence/SaveData.hpp"
 
 #include <SFML/Graphics.hpp>
 
@@ -19,6 +25,11 @@ public:
         sf::RenderWindow &window,
         StateManager &stateManager,
         int levelNumber);
+
+    GameplayState(
+        sf::RenderWindow &window,
+        StateManager &stateManager,
+        const SaveData &saveData);
 
     void handleEvent(
         const sf::Event &event) override;
@@ -42,10 +53,14 @@ private:
     sf::View uiView_;
 
     PauseMenu pauseMenu_;
+    ExitConfirmation exitConfirmation_;
 
     bool paused_ = false;
+    bool exitConfirmationOpen_ = false;
 
     void updateViews();
 
     void tryMove(sf::Vector2i direction);
+
+    void initializeUi();
 };

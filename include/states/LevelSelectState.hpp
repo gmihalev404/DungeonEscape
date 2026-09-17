@@ -1,9 +1,13 @@
 #pragma once
 
 #include "core/GameState.hpp"
+
 #include "ui/Button.hpp"
+#include "ui/SavedGameDialog.hpp"
 
 #include <SFML/Graphics.hpp>
+
+
 
 class StateManager;
 
@@ -11,17 +15,16 @@ class LevelSelectState : public GameState
 {
 public:
     LevelSelectState(
-        sf::RenderWindow& window,
-        StateManager& stateManager
-    );
+        sf::RenderWindow &window,
+        StateManager &stateManager);
 
-    void handleEvent(const sf::Event& event) override;
+    void handleEvent(const sf::Event &event) override;
     void update(sf::Time deltaTime) override;
-    void render(sf::RenderWindow& window) override;
+    void render(sf::RenderWindow &window) override;
 
 private:
-    sf::RenderWindow& window_;
-    StateManager& stateManager_;
+    sf::RenderWindow &window_;
+    StateManager &stateManager_;
 
     sf::Font font_;
     sf::Text title_;
@@ -32,6 +35,13 @@ private:
     Button level4Button_;
     Button level5Button_;
     Button backButton_;
-    
+
+    int selectedLevel_ = 0;
+    bool savedGameDialogOpen_ = false;
+
+    SavedGameDialog savedGameDialog_;
+
+    void updateLayout();
     void startLevel(int levelNumber);
+    void startNewLevel(int levelNumber);
 };

@@ -10,19 +10,19 @@ HUD::HUD()
       coinsText_(font_, "", 24),
       keyText_(font_, "", 24),
       timeText_(font_, "", 24),
+      backButton_(font_, "BACK", {120.f, 45.f}),
       pauseButton_(font_, "PAUSE", {130.f, 45.f})
 {
-    levelText_.setPosition({30.f, 20.f});
-    coinsText_.setPosition({260.f, 20.f});
-    keyText_.setPosition({520.f, 20.f});
-    timeText_.setPosition({800.f, 20.f});
+    levelText_.setPosition({190.f, 20.f});
+    coinsText_.setPosition({390.f, 20.f});
+    keyText_.setPosition({610.f, 20.f});
+    timeText_.setPosition({820.f, 20.f});
 
     levelText_.setFillColor(sf::Color::White);
     coinsText_.setFillColor(sf::Color::White);
     keyText_.setFillColor(sf::Color::White);
     timeText_.setFillColor(sf::Color::White);
 }
-
 void HUD::update(
     const GameSession &session)
 {
@@ -60,6 +60,8 @@ void HUD::render(
     window.draw(keyText_);
     window.draw(timeText_);
 
+    pauseButton_.render(window);
+    backButton_.render(window);
     pauseButton_.render(window);
 }
 
@@ -101,6 +103,9 @@ void HUD::updateLayout(
     const float width =
         static_cast<float>(windowSize.x);
 
+    backButton_.setPosition({25.f,
+                             12.f});
+
     pauseButton_.setPosition({width - 150.f,
                               12.f});
 }
@@ -108,5 +113,12 @@ void HUD::updateLayout(
 void HUD::handleEvent(
     const sf::Event &event)
 {
+    backButton_.handleEvent(event);
     pauseButton_.handleEvent(event);
+}
+
+void HUD::setOnBack(Callback callback)
+{
+    backButton_.setOnClick(
+        std::move(callback));
 }

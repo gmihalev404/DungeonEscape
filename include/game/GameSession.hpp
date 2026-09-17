@@ -6,6 +6,12 @@ class GameSession
 {
 public:
     explicit GameSession(int levelNumber);
+    
+    GameSession(
+        int levelNumber,
+        int coins,
+        bool hasKey,
+        sf::Time elapsedTime);
 
     void update(sf::Time deltaTime);
 
