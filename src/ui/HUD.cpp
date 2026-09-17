@@ -2,13 +2,15 @@
 
 #include <iomanip>
 #include <sstream>
+#include <utility>
 
 HUD::HUD()
     : font_("assets/fonts/Cinzel-Regular.ttf"),
       levelText_(font_, "", 24),
       coinsText_(font_, "", 24),
       keyText_(font_, "", 24),
-      timeText_(font_, "", 24)
+      timeText_(font_, "", 24),
+      pauseButton_(font_, "PAUSE", {130.f, 45.f})
 {
     levelText_.setPosition({30.f, 20.f});
     coinsText_.setPosition({260.f, 20.f});
@@ -22,50 +24,34 @@ HUD::HUD()
 }
 
 void HUD::update(
-    const GameSession& session
-)
+    const GameSession &session)
 {
     levelText_.setString(
         "LEVEL " +
-        std::to_string(session.getLevelNumber())
-    );
+        std::to_string(session.getLevelNumber()));
 
     coinsText_.setString(
         "COINS: " +
-        std::to_string(session.getCoins())
-    );
+        std::to_string(session.getCoins()));
 
     keyText_.setString(
         session.hasKey()
             ? "KEY: YES"
-            : "KEY: NO"
-    );
+            : "KEY: NO");
 
     timeText_.setString(
         "TIME: " +
-        formatTime(session.getElapsedTime())
-    );
+        formatTime(session.getElapsedTime()));
 }
 
 void HUD::render(
-    sf::RenderWindow& window
-) const
+    sf::RenderWindow &window) const
 {
-    sf::RectangleShape background({
-        static_cast<float>(
-            window.getSize().x
-        ),
-        70.f
-    });
-
-    background.setPosition({
-        0.f,
-        0.f
-    });
+    sf::RectangleShape background({static_cast<float>(window.getSize().x),
+                                   70.f});
 
     background.setFillColor(
-        sf::Color(10, 10, 15, 230)
-    );
+        sf::Color(10, 10, 15, 230));
 
     window.draw(background);
 
@@ -73,11 +59,13 @@ void HUD::render(
     window.draw(coinsText_);
     window.draw(keyText_);
     window.draw(timeText_);
+
+    pauseButton_.render(window);
 }
 
 std::string HUD::formatTime(
-    sf::Time time
-) const
+    sf::Time time) const
+
 {
     const int totalSeconds =
         static_cast<int>(time.asSeconds());
@@ -99,4 +87,26 @@ std::string HUD::formatTime(
         << seconds;
 
     return stream.str();
+}
+
+void HUD::setOnPause(Callback callback)
+{
+    pauseButton_.setOnClick(
+        std::move(callback));
+}
+
+void HUD::updateLayout(
+    sf::Vector2u windowSize)
+{
+    const float width =
+        static_cast<float>(windowSize.x);
+
+    pauseButton_.setPosition({width - 150.f,
+                              12.f});
+}
+
+void HUD::handleEvent(
+    const sf::Event &event)
+{
+    pauseButton_.handleEvent(event);
 }

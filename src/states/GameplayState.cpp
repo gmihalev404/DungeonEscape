@@ -4,6 +4,7 @@
 #include "game/LevelLoader.hpp"
 
 #include <string>
+#include <memory>
 
 GameplayState::GameplayState(
     sf::RenderWindow &window,
@@ -22,14 +23,57 @@ GameplayState::GameplayState(
 {
     hud_.update(session_);
     updateViews();
+
+    hud_.setOnPause([this]()
+                    { paused_ = true; });
+
+    pauseMenu_.setOnResume([this]()
+                           { paused_ = false; });
+
+    pauseMenu_.setOnRestart([this]()
+                            { stateManager_.changeState(
+                                  std::make_unique<GameplayState>(
+                                      window_,
+                                      stateManager_,
+                                      session_.getLevelNumber())); });
+
+    hud_.updateLayout(window_.getSize());
+    pauseMenu_.updateLayout(window_.getSize());
 }
 
 void GameplayState::handleEvent(
     const sf::Event &event)
 {
+    if (paused_)
+    {
+        pauseMenu_.handleEvent(event);
+
+        if (const auto *keyPressed =
+                event.getIf<sf::Event::KeyPressed>())
+        {
+            if (keyPressed->code ==
+                sf::Keyboard::Key::Escape)
+            {
+                paused_ = false;
+            }
+        }
+
+        return;
+    }
+
+    // Това е важно за PAUSE бутона.
+    hud_.handleEvent(event);
+
     if (const auto *keyPressed =
             event.getIf<sf::Event::KeyPressed>())
     {
+        if (keyPressed->code ==
+            sf::Keyboard::Key::Escape)
+        {
+            paused_ = true;
+            return;
+        }
+
         switch (keyPressed->code)
         {
         case sf::Keyboard::Key::W:
@@ -102,16 +146,21 @@ void GameplayState::tryMove(
 void GameplayState::update(
     sf::Time deltaTime)
 {
-    session_.update(deltaTime);
-    hud_.update(session_);
+    if (!paused_)
+    {
+        session_.update(deltaTime);
+        hud_.update(session_);
+    }
 
     updateViews();
+
+    hud_.updateLayout(window_.getSize());
+    pauseMenu_.updateLayout(window_.getSize());
 }
 
 void GameplayState::render(
     sf::RenderWindow &window)
 {
-    // World / camera
     window.setView(gameView_);
 
     levelRenderer_.render(
@@ -122,6 +171,11 @@ void GameplayState::render(
     window.setView(uiView_);
 
     hud_.render(window);
+
+    if (paused_)
+    {
+        pauseMenu_.render(window);
+    }
 }
 
 void GameplayState::updateViews()

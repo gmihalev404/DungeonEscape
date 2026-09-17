@@ -6,6 +6,7 @@
 #include "game/GameSession.hpp"
 #include "rendering/LevelRenderer.hpp"
 #include "ui/HUD.hpp"
+#include "ui/PauseMenu.hpp"
 
 #include <SFML/Graphics.hpp>
 
@@ -39,6 +40,10 @@ private:
 
     sf::View gameView_;
     sf::View uiView_;
+
+    PauseMenu pauseMenu_;
+
+    bool paused_ = false;
 
     void updateViews();
 

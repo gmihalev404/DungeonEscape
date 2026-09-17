@@ -38,6 +38,7 @@ add_executable(
 
     src/ui/Button.cpp
     src/ui/HUD.cpp
+    src/ui/PauseMenu.cpp
 )
 
 target_include_directories(

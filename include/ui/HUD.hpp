@@ -1,26 +1,30 @@
 #pragma once
 
 #include "game/GameSession.hpp"
+#include "ui/Button.hpp"
 
 #include <SFML/Graphics.hpp>
 
+#include <functional>
 #include <string>
 
 class HUD
 {
 public:
+    using Callback = std::function<void()>;
+
     HUD();
 
-    void update(const GameSession& session);
+    void update(const GameSession &session);
+    void updateLayout(sf::Vector2u windowSize);
 
-    void render(
-        sf::RenderWindow& window
-    ) const;
+    void setOnPause(Callback callback);
+    void handleEvent(const sf::Event &event);
+
+    void render(sf::RenderWindow &window) const;
 
 private:
-    std::string formatTime(
-        sf::Time time
-    ) const;
+    std::string formatTime(sf::Time time) const;
 
 private:
     sf::Font font_;
@@ -29,4 +33,6 @@ private:
     sf::Text coinsText_;
     sf::Text keyText_;
     sf::Text timeText_;
+
+    Button pauseButton_;
 };
