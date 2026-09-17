@@ -21,7 +21,14 @@ add_executable(
     DungeonEscape
 
     src/main.cpp
+
     src/core/Game.cpp
+    src/core/StateManager.cpp
+
+    src/states/MainMenuState.cpp
+    src/states/LevelSelectState.cpp
+
+    src/ui/Button.cpp
 )
 
 target_include_directories(
