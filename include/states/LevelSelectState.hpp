@@ -32,4 +32,6 @@ private:
     Button level4Button_;
     Button level5Button_;
     Button backButton_;
+    
+    void startLevel(int levelNumber);
 };

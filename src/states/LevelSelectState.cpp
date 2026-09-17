@@ -2,13 +2,13 @@
 
 #include "core/StateManager.hpp"
 #include "states/MainMenuState.hpp"
+#include "states/GameplayState.hpp"
 
 #include <memory>
 
 LevelSelectState::LevelSelectState(
-    sf::RenderWindow& window,
-    StateManager& stateManager
-)
+    sf::RenderWindow &window,
+    StateManager &stateManager)
     : window_(window),
       stateManager_(stateManager),
       font_("assets/fonts/Cinzel-Regular.ttf"),
@@ -23,10 +23,8 @@ LevelSelectState::LevelSelectState(
 {
     const auto titleBounds = title_.getLocalBounds();
 
-    title_.setOrigin({
-        titleBounds.position.x + titleBounds.size.x / 2.f,
-        titleBounds.position.y + titleBounds.size.y / 2.f
-    });
+    title_.setOrigin({titleBounds.position.x + titleBounds.size.x / 2.f,
+                      titleBounds.position.y + titleBounds.size.y / 2.f});
 
     title_.setPosition({640.f, 85.f});
 
@@ -40,17 +38,38 @@ LevelSelectState::LevelSelectState(
     backButton_.setPosition({buttonX, 570.f});
 
     backButton_.setOnClick([this]()
-    {
-        stateManager_.changeState(
-            std::make_unique<MainMenuState>(
-                window_,
-                stateManager_
-            )
-        );
-    });
+                           { stateManager_.changeState(
+                                 std::make_unique<MainMenuState>(
+                                     window_,
+                                     stateManager_)); });
+
+    level1Button_.setOnClick([this]()
+                             { startLevel(1); });
+
+    level2Button_.setOnClick([this]()
+                             { startLevel(2); });
+
+    level3Button_.setOnClick([this]()
+                             { startLevel(3); });
+
+    level4Button_.setOnClick([this]()
+                             { startLevel(4); });
+
+    level5Button_.setOnClick([this]()
+                             { startLevel(5); });
 }
 
-void LevelSelectState::handleEvent(const sf::Event& event)
+void LevelSelectState::startLevel(
+    int levelNumber)
+{
+    stateManager_.changeState(
+        std::make_unique<GameplayState>(
+            window_,
+            stateManager_,
+            levelNumber));
+}
+
+void LevelSelectState::handleEvent(const sf::Event &event)
 {
     level1Button_.handleEvent(event);
     level2Button_.handleEvent(event);
@@ -64,7 +83,7 @@ void LevelSelectState::update(sf::Time)
 {
 }
 
-void LevelSelectState::render(sf::RenderWindow& window)
+void LevelSelectState::render(sf::RenderWindow &window)
 {
     window.draw(title_);
 

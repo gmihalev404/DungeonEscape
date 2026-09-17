@@ -41,7 +41,25 @@ void Game::processEvents()
             continue;
         }
 
-        if (GameState *state = stateManager_.getCurrentState())
+        if (const auto *resized =
+                event->getIf<sf::Event::Resized>())
+        {
+            const sf::Vector2f newSize(
+                static_cast<float>(resized->size.x),
+                static_cast<float>(resized->size.y));
+
+            sf::View view = window_.getView();
+
+            view.setSize(newSize);
+
+            view.setCenter({newSize.x / 2.f,
+                            newSize.y / 2.f});
+
+            window_.setView(view);
+        }
+
+        if (GameState *state =
+                stateManager_.getCurrentState())
         {
             state->handleEvent(*event);
         }

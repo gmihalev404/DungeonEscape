@@ -25,10 +25,19 @@ add_executable(
     src/core/Game.cpp
     src/core/StateManager.cpp
 
+    src/game/Player.cpp
+    src/game/Level.cpp
+    src/game/LevelLoader.cpp
+    src/game/GameSession.cpp
+
+    src/rendering/LevelRenderer.cpp
+
     src/states/MainMenuState.cpp
     src/states/LevelSelectState.cpp
+    src/states/GameplayState.cpp
 
     src/ui/Button.cpp
+    src/ui/HUD.cpp
 )
 
 target_include_directories(
