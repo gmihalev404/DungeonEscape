@@ -5,6 +5,7 @@
 #include "states/GameplayState.hpp"
 
 #include "persistence/SaveManager.hpp"
+#include "persistence/ProgressManager.hpp"
 
 #include <memory>
 
@@ -63,6 +64,20 @@ LevelSelectState::LevelSelectState(
 
     savedGameDialog_.setOnCancel([this]()
                                  { savedGameDialogOpen_ = false; });
+    level1Button_.setEnabled(
+        ProgressManager::isLevelUnlocked(1));
+
+    level2Button_.setEnabled(
+        ProgressManager::isLevelUnlocked(2));
+
+    level3Button_.setEnabled(
+        ProgressManager::isLevelUnlocked(3));
+
+    level4Button_.setEnabled(
+        ProgressManager::isLevelUnlocked(4));
+
+    level5Button_.setEnabled(
+        ProgressManager::isLevelUnlocked(5));
 
     savedGameDialog_.updateLayout(
         window_.getSize());
@@ -73,6 +88,11 @@ LevelSelectState::LevelSelectState(
 void LevelSelectState::startLevel(
     int levelNumber)
 {
+    if (!ProgressManager::isLevelUnlocked(
+            levelNumber))
+    {
+        return;
+    }
     if (SaveManager::hasSave())
     {
         const SaveData saveData =

@@ -11,16 +11,18 @@ public:
     using Callback = std::function<void()>;
 
     Button(
-        const sf::Font& font,
-        const std::string& label,
-        sf::Vector2f size
-    );
+        const sf::Font &font,
+        const std::string &label,
+        sf::Vector2f size);
 
     void setPosition(sf::Vector2f position);
     void setOnClick(Callback callback);
 
-    void handleEvent(const sf::Event& event);
-    void render(sf::RenderWindow& window) const;
+    void handleEvent(const sf::Event &event);
+    void render(sf::RenderWindow &window) const;
+
+    void setEnabled(bool enabled);
+    bool isEnabled() const;
 
 private:
     bool contains(sf::Vector2i point) const;
@@ -34,4 +36,5 @@ private:
     Callback onClick_;
 
     bool hovered_ = false;
+    bool enabled_ = true;
 };

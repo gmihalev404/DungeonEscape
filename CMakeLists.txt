@@ -43,6 +43,7 @@ add_executable(
     src/ui/SavedGameDialog.cpp
 
     src/persistence/SaveManager.cpp
+    src/persistence/ProgressManager.cpp
 )
 
 target_include_directories(

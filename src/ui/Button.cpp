@@ -31,6 +31,10 @@ void Button::setOnClick(Callback callback)
 
 void Button::handleEvent(const sf::Event &event)
 {
+    if (!enabled_)
+    {
+        return;
+    }
     if (const auto *mouseMoved =
             event.getIf<sf::Event::MouseMoved>())
     {
@@ -80,6 +84,10 @@ void Button::updateTextPosition()
 
 void Button::setHovered(bool hovered)
 {
+    if (!enabled_)
+    {
+        return;
+    }
     if (hovered_ == hovered)
     {
         return;
@@ -97,4 +105,37 @@ void Button::setHovered(bool hovered)
         background_.setFillColor(sf::Color(35, 35, 45));
         background_.setOutlineColor(sf::Color(160, 120, 60));
     }
+}
+
+void Button::setEnabled(bool enabled)
+{
+    enabled_ = enabled;
+
+    if (!enabled_)
+    {
+        background_.setFillColor(
+            sf::Color(25, 25, 30));
+
+        background_.setOutlineColor(
+            sf::Color(70, 70, 75));
+
+        text_.setFillColor(
+            sf::Color(110, 110, 115));
+    }
+    else
+    {
+        background_.setFillColor(
+            sf::Color(35, 35, 45));
+
+        background_.setOutlineColor(
+            sf::Color(160, 120, 60));
+
+        text_.setFillColor(
+            sf::Color::White);
+    }
+}
+
+bool Button::isEnabled() const
+{
+    return enabled_;
 }

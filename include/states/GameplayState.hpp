@@ -16,6 +16,8 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <string>
+
 class StateManager;
 
 class GameplayState : public GameState
@@ -52,6 +54,11 @@ private:
     sf::View gameView_;
     sf::View uiView_;
 
+    sf::Font notificationFont_;
+    sf::Text notificationText_;
+
+    sf::Time notificationRemaining_{};
+
     PauseMenu pauseMenu_;
     ExitConfirmation exitConfirmation_;
 
@@ -63,4 +70,9 @@ private:
     void tryMove(sf::Vector2i direction);
 
     void initializeUi();
+
+    void showNotification(
+        const std::string &message);
+
+    void completeLevel();
 };

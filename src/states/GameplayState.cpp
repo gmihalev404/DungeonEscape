@@ -6,6 +6,7 @@
 #include "game/LevelLoader.hpp"
 
 #include "persistence/SaveManager.hpp"
+#include "persistence/ProgressManager.hpp"
 
 #include <string>
 #include <memory>
@@ -23,54 +24,15 @@ GameplayState::GameplayState(
               std::to_string(levelNumber) +
               ".txt")),
       player_(level_.getPlayerSpawn()),
-      levelRenderer_(32.f)
+      levelRenderer_(32.f),
+      notificationFont_(
+          "assets/fonts/Cinzel-Regular.ttf"),
+      notificationText_(
+          notificationFont_,
+          "",
+          28)
 {
-    hud_.update(session_);
-    updateViews();
-
-    hud_.setOnPause([this]()
-                    { paused_ = true; });
-
-    pauseMenu_.setOnResume([this]()
-                           { paused_ = false; });
-
-    pauseMenu_.setOnRestart([this]()
-                            { stateManager_.changeState(
-                                  std::make_unique<GameplayState>(
-                                      window_,
-                                      stateManager_,
-                                      session_.getLevelNumber())); });
-    hud_.setOnBack([this]()
-                   { exitConfirmationOpen_ = true; });
-
-    exitConfirmation_.setOnSaveAndExit([this]()
-                                       {
-    SaveManager::save(
-        session_,
-        level_,
-        player_
-    );
-
-    stateManager_.changeState(
-        std::make_unique<LevelSelectState>(
-            window_,
-            stateManager_
-        )
-    ); });
-
-    exitConfirmation_.setOnExitWithoutSaving([this]()
-                                             { stateManager_.changeState(
-                                                   std::make_unique<LevelSelectState>(
-                                                       window_,
-                                                       stateManager_)); });
-
-    exitConfirmation_.setOnCancel([this]()
-                                  { exitConfirmationOpen_ = false; });
-
-    hud_.updateLayout(window_.getSize());
-    pauseMenu_.updateLayout(window_.getSize());
-    exitConfirmation_.updateLayout(
-        window_.getSize());
+    initializeUi();
 }
 
 GameplayState::GameplayState(
@@ -89,88 +51,15 @@ GameplayState::GameplayState(
           saveData.playerPosition),
       player_(
           saveData.playerPosition),
-      levelRenderer_(32.f)
+      levelRenderer_(32.f),
+      notificationFont_(
+          "assets/fonts/Cinzel-Regular.ttf"),
+      notificationText_(
+          notificationFont_,
+          "",
+          28)
 {
     initializeUi();
-}
-
-void GameplayState::handleEvent(
-    const sf::Event &event)
-{
-
-    if (exitConfirmationOpen_)
-    {
-        exitConfirmation_.handleEvent(event);
-
-        if (const auto *keyPressed =
-                event.getIf<sf::Event::KeyPressed>())
-        {
-            if (keyPressed->code ==
-                sf::Keyboard::Key::Escape)
-            {
-                exitConfirmationOpen_ = false;
-            }
-        }
-
-        return;
-    }
-
-    if (paused_)
-    {
-        pauseMenu_.handleEvent(event);
-
-        if (const auto *keyPressed =
-                event.getIf<sf::Event::KeyPressed>())
-        {
-            if (keyPressed->code ==
-                sf::Keyboard::Key::Escape)
-            {
-                paused_ = false;
-            }
-        }
-
-        return;
-    }
-
-    // Това е важно за PAUSE бутона.
-    hud_.handleEvent(event);
-
-    if (const auto *keyPressed =
-            event.getIf<sf::Event::KeyPressed>())
-    {
-        if (keyPressed->code ==
-            sf::Keyboard::Key::Escape)
-        {
-            paused_ = true;
-            return;
-        }
-
-        switch (keyPressed->code)
-        {
-        case sf::Keyboard::Key::W:
-        case sf::Keyboard::Key::Up:
-            tryMove({0, -1});
-            break;
-
-        case sf::Keyboard::Key::S:
-        case sf::Keyboard::Key::Down:
-            tryMove({0, 1});
-            break;
-
-        case sf::Keyboard::Key::A:
-        case sf::Keyboard::Key::Left:
-            tryMove({-1, 0});
-            break;
-
-        case sf::Keyboard::Key::D:
-        case sf::Keyboard::Key::Right:
-            tryMove({1, 0});
-            break;
-
-        default:
-            break;
-        }
-    }
 }
 
 void GameplayState::tryMove(
@@ -196,6 +85,20 @@ void GameplayState::tryMove(
         return;
     }
 
+    if (targetTile == TileType::Treasure)
+    {
+        if (!session_.hasKey())
+        {
+            showNotification(
+                "YOU NEED THE KEY!");
+
+            return;
+        }
+
+        completeLevel();
+        return;
+    }
+
     player_.setPosition(targetPosition);
 
     if (targetTile == TileType::Coin)
@@ -217,6 +120,17 @@ void GameplayState::tryMove(
 void GameplayState::update(
     sf::Time deltaTime)
 {
+    if (notificationRemaining_ > sf::Time::Zero)
+    {
+        notificationRemaining_ -= deltaTime;
+
+        if (notificationRemaining_ <
+            sf::Time::Zero)
+        {
+            notificationRemaining_ =
+                sf::Time::Zero;
+        }
+    }
     if (!paused_ &&
         !exitConfirmationOpen_)
     {
@@ -245,6 +159,12 @@ void GameplayState::render(
     window.setView(uiView_);
 
     hud_.render(window);
+
+    if (notificationRemaining_ >
+        sf::Time::Zero)
+    {
+        window.draw(notificationText_);
+    }
 
     if (paused_)
     {
@@ -394,4 +314,127 @@ void GameplayState::initializeUi()
     pauseMenu_.updateLayout(window_.getSize());
     exitConfirmation_.updateLayout(
         window_.getSize());
+}
+
+void GameplayState::showNotification(
+    const std::string &message)
+{
+    notificationText_.setString(message);
+
+    notificationText_.setFillColor(
+        sf::Color(230, 190, 70));
+
+    const sf::FloatRect bounds =
+        notificationText_.getLocalBounds();
+
+    notificationText_.setOrigin({bounds.position.x +
+                                     bounds.size.x / 2.f,
+
+                                 bounds.position.y +
+                                     bounds.size.y / 2.f});
+
+    const sf::Vector2u size =
+        window_.getSize();
+
+    notificationText_.setPosition({static_cast<float>(size.x) / 2.f,
+                                   static_cast<float>(size.y) - 60.f});
+
+    notificationRemaining_ =
+        sf::seconds(2.f);
+}
+
+void GameplayState::completeLevel()
+{
+    const int currentLevel =
+        session_.getLevelNumber();
+
+    if (currentLevel < 5)
+    {
+        ProgressManager::unlockLevel(
+            currentLevel + 1);
+    }
+
+    SaveManager::removeSave();
+
+    stateManager_.changeState(
+        std::make_unique<LevelSelectState>(
+            window_,
+            stateManager_));
+}
+
+void GameplayState::handleEvent(
+    const sf::Event &event)
+{
+    if (exitConfirmationOpen_)
+    {
+        exitConfirmation_.handleEvent(event);
+
+        if (const auto *keyPressed =
+                event.getIf<sf::Event::KeyPressed>())
+        {
+            if (keyPressed->code ==
+                sf::Keyboard::Key::Escape)
+            {
+                exitConfirmationOpen_ = false;
+            }
+        }
+
+        return;
+    }
+
+    if (paused_)
+    {
+        pauseMenu_.handleEvent(event);
+
+        if (const auto *keyPressed =
+                event.getIf<sf::Event::KeyPressed>())
+        {
+            if (keyPressed->code ==
+                sf::Keyboard::Key::Escape)
+            {
+                paused_ = false;
+            }
+        }
+
+        return;
+    }
+
+    hud_.handleEvent(event);
+
+    if (const auto *keyPressed =
+            event.getIf<sf::Event::KeyPressed>())
+    {
+        if (keyPressed->code ==
+            sf::Keyboard::Key::Escape)
+        {
+            paused_ = true;
+            return;
+        }
+
+        switch (keyPressed->code)
+        {
+        case sf::Keyboard::Key::W:
+        case sf::Keyboard::Key::Up:
+            tryMove({0, -1});
+            break;
+
+        case sf::Keyboard::Key::S:
+        case sf::Keyboard::Key::Down:
+            tryMove({0, 1});
+            break;
+
+        case sf::Keyboard::Key::A:
+        case sf::Keyboard::Key::Left:
+            tryMove({-1, 0});
+            break;
+
+        case sf::Keyboard::Key::D:
+        case sf::Keyboard::Key::Right:
+            tryMove({1, 0});
+            break;
+
+        default:
+            break;
+        }
+    }
 }
