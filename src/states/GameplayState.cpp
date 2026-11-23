@@ -5,6 +5,8 @@
 
 #include "game/LevelLoader.hpp"
 
+#include "controllers/HumanController.hpp"
+
 #include "persistence/SaveManager.hpp"
 #include "persistence/ProgressManager.hpp"
 
@@ -24,6 +26,8 @@ GameplayState::GameplayState(
               std::to_string(levelNumber) +
               ".txt")),
       player_(level_.getPlayerSpawn()),
+      playerController_(
+          std::make_unique<HumanController>()),
       levelRenderer_(32.f),
       notificationFont_(
           "assets/fonts/Cinzel-Regular.ttf"),
@@ -51,6 +55,8 @@ GameplayState::GameplayState(
           saveData.playerPosition),
       player_(
           saveData.playerPosition),
+      playerController_(
+          std::make_unique<HumanController>()),
       levelRenderer_(32.f),
       notificationFont_(
           "assets/fonts/Cinzel-Regular.ttf"),
@@ -60,61 +66,6 @@ GameplayState::GameplayState(
           28)
 {
     initializeUi();
-}
-
-void GameplayState::tryMove(
-    sf::Vector2i direction)
-{
-    const sf::Vector2i currentPosition =
-        player_.getPosition();
-
-    const sf::Vector2i targetPosition = {
-        currentPosition.x + direction.x,
-        currentPosition.y + direction.y};
-
-    if (!level_.isInside(targetPosition))
-    {
-        return;
-    }
-
-    const TileType targetTile =
-        level_.getTile(targetPosition);
-
-    if (targetTile == TileType::Wall)
-    {
-        return;
-    }
-
-    if (targetTile == TileType::Treasure)
-    {
-        if (!session_.hasKey())
-        {
-            showNotification(
-                "YOU NEED THE KEY!");
-
-            return;
-        }
-
-        completeLevel();
-        return;
-    }
-
-    player_.setPosition(targetPosition);
-
-    if (targetTile == TileType::Coin)
-    {
-        session_.collectCoin();
-        level_.setTile(
-            targetPosition,
-            TileType::Empty);
-    }
-    else if (targetTile == TileType::Key)
-    {
-        session_.collectKey();
-        level_.setTile(
-            targetPosition,
-            TileType::Empty);
-    }
 }
 
 void GameplayState::update(
@@ -135,6 +86,23 @@ void GameplayState::update(
         !exitConfirmationOpen_ &&
         !levelComplete_)
     {
+        if (!player_.isMoving())
+        {
+            tryStartMove(
+                playerController_->getAction());
+        }
+
+        const bool wasMoving =
+            player_.isMoving();
+
+        player_.update(deltaTime);
+
+        if (wasMoving &&
+            !player_.isMoving())
+        {
+            handlePlayerArrival();
+        }
+
         session_.update(deltaTime);
         hud_.update(session_);
     }
@@ -221,16 +189,14 @@ void GameplayState::updateViews()
     const float levelHeight =
         level_.getHeight() * tileSize;
 
-    const sf::Vector2i playerPosition =
-        player_.getPosition();
+    const sf::Vector2f playerPosition =
+        player_.getWorldPosition();
 
     float centerX =
-        (playerPosition.x + 0.5f) *
-        tileSize;
+        playerPosition.x * tileSize;
 
     float centerY =
-        (playerPosition.y + 0.5f) *
-        tileSize;
+        playerPosition.y * tileSize;
 
     const float halfWidth =
         cameraWidth / 2.f;
@@ -344,6 +310,117 @@ void GameplayState::initializeUi()
         window_.getSize());
 }
 
+void GameplayState::tryStartMove(
+    Action action)
+{
+    if (action == Action::None ||
+        player_.isMoving())
+    {
+        return;
+    }
+
+    sf::Vector2i direction{0, 0};
+
+    switch (action)
+    {
+    case Action::MoveUp:
+        direction = {0, -1};
+        break;
+
+    case Action::MoveDown:
+        direction = {0, 1};
+        break;
+
+    case Action::MoveLeft:
+        direction = {-1, 0};
+        break;
+
+    case Action::MoveRight:
+        direction = {1, 0};
+        break;
+
+    default:
+        return;
+    }
+
+    const sf::Vector2i current =
+        player_.getPosition();
+
+    const sf::Vector2i target = {
+        current.x + direction.x,
+        current.y + direction.y};
+
+    if (!level_.isInside(target))
+    {
+        return;
+    }
+
+    const TileType tile =
+        level_.getTile(target);
+
+    if (tile == TileType::Wall)
+    {
+        return;
+    }
+
+    if (tile == TileType::Treasure &&
+        !session_.hasKey())
+    {
+        showNotification(
+            "YOU NEED THE KEY!");
+
+        return;
+    }
+
+    player_.startMove(
+        target,
+        action);
+}
+
+void GameplayState::handlePlayerArrival()
+{
+    const sf::Vector2i position =
+        player_.getPosition();
+
+    const TileType tile =
+        level_.getTile(position);
+
+    if (tile == TileType::Coin)
+    {
+        session_.collectCoin();
+
+        level_.setTile(
+            position,
+            TileType::Empty);
+    }
+    else if (tile == TileType::Key)
+    {
+        session_.collectKey();
+
+        level_.setTile(
+            position,
+            TileType::Empty);
+    }
+    else if (tile == TileType::Treasure)
+    {
+        completeLevel();
+    }
+    else if (tile == TileType::Portal)
+    {
+        const auto destination =
+            level_.getOtherPortal(position);
+
+        if (destination.has_value())
+        {
+            player_.setPosition(
+                destination.value());
+
+            showNotification(
+                "TELEPORTED!");
+        }
+    }
+}
+
 void GameplayState::showNotification(
     const std::string &message)
 {
@@ -445,32 +522,6 @@ void GameplayState::handleEvent(
         {
             paused_ = true;
             return;
-        }
-
-        switch (keyPressed->code)
-        {
-        case sf::Keyboard::Key::W:
-        case sf::Keyboard::Key::Up:
-            tryMove({0, -1});
-            break;
-
-        case sf::Keyboard::Key::S:
-        case sf::Keyboard::Key::Down:
-            tryMove({0, 1});
-            break;
-
-        case sf::Keyboard::Key::A:
-        case sf::Keyboard::Key::Left:
-            tryMove({-1, 0});
-            break;
-
-        case sf::Keyboard::Key::D:
-        case sf::Keyboard::Key::Right:
-            tryMove({1, 0});
-            break;
-
-        default:
-            break;
         }
     }
 }

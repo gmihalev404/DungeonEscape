@@ -5,6 +5,9 @@
 #include "game/Level.hpp"
 #include "game/Player.hpp"
 #include "game/GameSession.hpp"
+#include "game/Action.hpp"
+
+#include "controllers/IController.hpp"
 
 #include "rendering/LevelRenderer.hpp"
 
@@ -18,6 +21,8 @@
 #include <SFML/Graphics.hpp>
 
 #include <string>
+
+#include <memory>
 
 class StateManager;
 
@@ -49,6 +54,8 @@ private:
     Level level_;
     Player player_;
 
+    std::unique_ptr<IController> playerController_;
+
     LevelRenderer levelRenderer_;
     HUD hud_;
 
@@ -70,7 +77,8 @@ private:
 
     void updateViews();
 
-    void tryMove(sf::Vector2i direction);
+    void tryStartMove(Action action);
+    void handlePlayerArrival();
 
     void initializeUi();
 

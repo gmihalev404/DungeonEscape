@@ -30,6 +30,32 @@ const sf::Vector2i &Level::getPlayerSpawn() const
     return playerSpawn_;
 }
 
+std::optional<sf::Vector2i>
+Level::getOtherPortal(
+    sf::Vector2i currentPortal) const
+{
+    for (int y = 0; y < getHeight(); ++y)
+    {
+        for (int x = 0; x < getWidth(); ++x)
+        {
+            const sf::Vector2i position{x, y};
+
+            if (position == currentPortal)
+            {
+                continue;
+            }
+
+            if (getTile(position) ==
+                TileType::Portal)
+            {
+                return position;
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 int Level::getWidth() const
 {
     if (tiles_.empty())

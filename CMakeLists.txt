@@ -45,6 +45,8 @@ add_executable(
 
     src/persistence/SaveManager.cpp
     src/persistence/ProgressManager.cpp
+
+    src/controllers/HumanController.cpp
 )
 
 target_include_directories(

@@ -11,10 +11,9 @@ float LevelRenderer::getTileSize() const
 }
 
 void LevelRenderer::render(
-    sf::RenderWindow& window,
-    const Level& level,
-    const Player& player
-) const
+    sf::RenderWindow &window,
+    const Level &level,
+    const Player &player) const
 {
     sf::RectangleShape tileShape({
         tileSize_,
@@ -62,43 +61,39 @@ void LevelRenderer::render(
         sf::Color(220, 70, 70)
     );
 
-    const sf::Vector2i position =
-        player.getPosition();
+    const sf::Vector2f position =
+        player.getWorldPosition();
 
     playerShape.setPosition({
-        (static_cast<float>(position.x) + 0.5f)
-            * tileSize_,
-
-        (static_cast<float>(position.y) + 0.5f)
-            * tileSize_
+        position.x * tileSize_,
+        position.y * tileSize_
     });
 
     window.draw(playerShape);
 }
 
 sf::Color LevelRenderer::getTileColor(
-    TileType tile
-) const
+    TileType tile) const
 {
     switch (tile)
     {
-        case TileType::Empty:
-            return sf::Color(35, 35, 42);
+    case TileType::Empty:
+        return sf::Color(35, 35, 42);
 
-        case TileType::Wall:
-            return sf::Color(95, 90, 100);
+    case TileType::Wall:
+        return sf::Color(95, 90, 100);
 
-        case TileType::Coin:
-            return sf::Color(220, 180, 50);
+    case TileType::Coin:
+        return sf::Color(220, 180, 50);
 
-        case TileType::Key:
-            return sf::Color(70, 170, 220);
+    case TileType::Key:
+        return sf::Color(70, 170, 220);
 
-        case TileType::Treasure:
-            return sf::Color(170, 100, 45);
+    case TileType::Treasure:
+        return sf::Color(170, 100, 45);
 
-        case TileType::Portal:
-            return sf::Color(145, 70, 190);
+    case TileType::Portal:
+        return sf::Color(145, 70, 190);
     }
 
     return sf::Color::Magenta;
