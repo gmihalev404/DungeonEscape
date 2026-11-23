@@ -41,6 +41,7 @@ add_executable(
     src/ui/PauseMenu.cpp
     src/ui/ExitConfirmation.cpp
     src/ui/SavedGameDialog.cpp
+    src/ui/LevelCompleteDialog.cpp
 
     src/persistence/SaveManager.cpp
     src/persistence/ProgressManager.cpp

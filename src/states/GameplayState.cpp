@@ -132,7 +132,8 @@ void GameplayState::update(
         }
     }
     if (!paused_ &&
-        !exitConfirmationOpen_)
+        !exitConfirmationOpen_ &&
+        !levelComplete_)
     {
         session_.update(deltaTime);
         hud_.update(session_);
@@ -143,6 +144,8 @@ void GameplayState::update(
     hud_.updateLayout(window_.getSize());
     pauseMenu_.updateLayout(window_.getSize());
     exitConfirmation_.updateLayout(
+        window_.getSize());
+    levelCompleteDialog_.updateLayout(
         window_.getSize());
 }
 
@@ -174,6 +177,10 @@ void GameplayState::render(
     if (exitConfirmationOpen_)
     {
         exitConfirmation_.render(window);
+    }
+    if (levelComplete_)
+    {
+        levelCompleteDialog_.render(window);
     }
 }
 
@@ -314,6 +321,27 @@ void GameplayState::initializeUi()
     pauseMenu_.updateLayout(window_.getSize());
     exitConfirmation_.updateLayout(
         window_.getSize());
+
+    levelCompleteDialog_.setOnNextLevel([this]()
+                                        {const int nextLevel =
+        session_.getLevelNumber() + 1;
+
+    stateManager_.changeState(
+        std::make_unique<GameplayState>(
+            window_,
+            stateManager_,
+            nextLevel
+        )
+    ); });
+
+    levelCompleteDialog_.setOnLevelSelect([this]()
+                                          { stateManager_.changeState(
+                                                std::make_unique<LevelSelectState>(
+                                                    window_,
+                                                    stateManager_)); });
+
+    levelCompleteDialog_.updateLayout(
+        window_.getSize());
 }
 
 void GameplayState::showNotification(
@@ -356,15 +384,23 @@ void GameplayState::completeLevel()
 
     SaveManager::removeSave();
 
-    stateManager_.changeState(
-        std::make_unique<LevelSelectState>(
-            window_,
-            stateManager_));
+    levelCompleteDialog_.setStats(
+        currentLevel,
+        session_.getCoins(),
+        session_.getElapsedTime());
+
+    levelComplete_ = true;
 }
 
 void GameplayState::handleEvent(
     const sf::Event &event)
 {
+    if (levelComplete_)
+    {
+        levelCompleteDialog_.handleEvent(event);
+        return;
+    }
+
     if (exitConfirmationOpen_)
     {
         exitConfirmation_.handleEvent(event);

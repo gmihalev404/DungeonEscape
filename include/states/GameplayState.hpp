@@ -11,6 +11,7 @@
 #include "ui/HUD.hpp"
 #include "ui/PauseMenu.hpp"
 #include "ui/ExitConfirmation.hpp"
+#include "ui/LevelCompleteDialog.hpp"
 
 #include "persistence/SaveData.hpp"
 
@@ -61,9 +62,11 @@ private:
 
     PauseMenu pauseMenu_;
     ExitConfirmation exitConfirmation_;
+    LevelCompleteDialog levelCompleteDialog_;
 
     bool paused_ = false;
     bool exitConfirmationOpen_ = false;
+    bool levelComplete_ = false;
 
     void updateViews();
 
